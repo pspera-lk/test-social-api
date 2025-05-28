@@ -1,55 +1,60 @@
-import fetch from 'node-fetch';
-
-const IMGBB_API_KEY = 'YOUR_IMGBB_API_KEY_HERE'; // Replace with your key
+import fetch from "node-fetch";
+import FormData from "form-data";
 
 export default async function handler(req, res) {
-  const { url } = req.query;
+  const targetUrl = req.query.url;
 
-  if (!url) {
+  if (!targetUrl) {
     return res.status(400).json({
-      error: 'URL parameter is required.',
-      made_by: 'Pasindu 🇱🇰',
-      telegram: '@Pasindu_21',
-      channel: 'https://t.me/sl_bjs'
+      error: "URL parameter is required.",
+      made_by: "Pasindu 🇱🇰",
+      telegram: "@Pasindu_21",
+      channel: "https://t.me/sl_bjs"
     });
   }
 
   try {
-    // 1. Generate thum.io screenshot URL
-    const screenshotUrl = `https://image.thum.io/get/width/1200/crop/700/noanimate/${encodeURIComponent(url)}`;
+    const thumioUrl = `https://image.thum.io/auth/74245/fullpage/${encodeURIComponent(targetUrl)}`;
 
-    // 2. Fetch the screenshot image as buffer
-    const screenshotResponse = await fetch(screenshotUrl);
-    if (!screenshotResponse.ok) throw new Error('Failed to fetch screenshot');
-
-    const buffer = await screenshotResponse.buffer();
-
-    // 3. Upload to ImgBB (multipart/form-data)
-    const formData = new FormData();
-    formData.append('image', buffer.toString('base64')); // ImgBB expects base64 string
-    formData.append('key', IMGBB_API_KEY);
-
-    const imgbbResponse = await fetch('https://api.imgbb.com/1/upload', {
-      method: 'POST',
-      body: formData
+    const screenshotResponse = await fetch(thumioUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; VercelNode/1.0)",
+        "Referer": "https://ww5.123moviesfree.net"
+      }
     });
 
-    const imgbbResult = await imgbbResponse.json();
-
-    if (!imgbbResult.success) {
-      throw new Error('Failed to upload to ImgBB');
+    if (!screenshotResponse.ok) {
+      throw new Error("Failed to fetch screenshot from thum.io");
     }
 
-    return res.json({
-      image_url: imgbbResult.data.url,
-      made_by: 'Pasindu 🇱🇰',
-      telegram: '@Pasindu_21',
-      channel: 'https://t.me/sl_bjs'
+    const imageBuffer = await screenshotResponse.buffer();
+
+    // Upload to 0x0.st
+    const form = new FormData();
+    form.append("file", imageBuffer, { filename: "screenshot.png" });
+
+    const uploadResponse = await fetch("https://0x0.st", {
+      method: "POST",
+      body: form
     });
-  } catch (error) {
+
+    if (!uploadResponse.ok) {
+      throw new Error("Failed to upload to 0x0.st");
+    }
+
+    const uploadedUrl = (await uploadResponse.text()).trim();
+
+    return res.json({
+      image_url: uploadedUrl,
+      made_by: "Pasindu 🇱🇰",
+      telegram: "@Pasindu_21",
+      channel: "https://t.me/sl_bjs"
+    });
+
+  } catch (err) {
     return res.status(500).json({
-      error: error.message || 'Internal Server Error',
-      made_by: 'Pasindu 🇱🇰'
+      error: err.message || "Unknown error",
+      made_by: "Pasindu 🇱🇰"
     });
   }
 }
