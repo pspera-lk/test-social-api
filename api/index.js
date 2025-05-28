@@ -2,6 +2,14 @@ import fetch from "node-fetch";
 import FormData from "form-data";
 
 export default async function handler(req, res) {
+  // Only allow GET requests
+  if (req.method !== "GET") {
+    return res.status(405).json({
+      error: "Method not allowed. Use GET.",
+      made_by: "Pasindu 🇱🇰"
+    });
+  }
+
   const targetUrl = req.query.url;
 
   if (!targetUrl) {
