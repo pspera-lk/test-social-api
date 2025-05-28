@@ -7,7 +7,7 @@
     "start": "vercel dev"
   },
   "dependencies": {
-    "node-fetch": "^3.4.1",
+    "node-fetch": "^3.3.1",
     "form-data": "^4.0.0"
   }
 }
